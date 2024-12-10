@@ -1,0 +1,32 @@
+services:
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:2'
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+      - target: 81
+        published: 81
+        protocol: tcp
+        mode: host
+    volumes:
+      - data:/data
+      - letsencrypt:/etc/letsencrypt
+    networks:
+      - shared_network
+
+volumes:
+  data:
+  letsencrypt:
+networks:
+  shared_network:
+    external: true
