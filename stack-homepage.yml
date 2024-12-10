@@ -1,0 +1,11 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    ports:
+      - target: 3000
+        published: 3005
+        protocol: tcp
+        mode: host
+    volumes:
+      - /home/<your-user>/homepage/config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock
