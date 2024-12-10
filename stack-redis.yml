@@ -1,0 +1,30 @@
+services:
+  redis:
+    image: docker.io/library/redis:7-alpine
+    command: --save 60 1 --loglevel warning
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 6739
+        published: 6739
+        protocol: tcp
+        mode: host
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - redis_data:/data
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    external: true
+    
+volumes:
+  redis_data:
