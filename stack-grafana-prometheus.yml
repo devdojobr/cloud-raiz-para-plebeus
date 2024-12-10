@@ -1,0 +1,92 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 9090
+        published: 9090
+        protocol: tcp
+        mode: host
+    volumes:
+      - /etc/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command: --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - shared_network
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      GF_SERVER_ROOT_URL: "https://grafana.xxx.com"
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: "authentik"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: ""
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: ""
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://authentik.xxx.com/application/o/authorize/"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://authentik.xxx.com/application/o/token/"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "https://authentik.xxx.com/application/o/userinfo/"
+      GF_AUTH_SIGNOUT_REDIRECT_URL: "https://authentik.xxx.com/application/o/grafana/end-session/"
+      # Optionally enable auto-login (bypasses Grafana login screen)
+      GF_AUTH_OAUTH_AUTO_LOGIN: "true"
+      # Optionally map user groups to Grafana roles
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups, 'Grafana Admins') && 'Admin' || contains(groups, 'Grafana Editors') && 'Editor' || 'Viewer'"
+
+    depends_on:
+      - prometheus
+    networks:
+      - shared_network
+  
+  node_exporter:
+    image: prom/node-exporter:v1.8.2
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - /:/host:ro,rslave
+    command: --path.rootfs=/host
+    depends_on:
+      - prometheus
+    networks:
+      - shared_network
+    
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - shared_network
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  shared_network:
+    external: true
+  
