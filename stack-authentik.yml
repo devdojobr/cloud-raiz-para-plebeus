@@ -1,0 +1,89 @@
+services:
+  server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:2024.10.4
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 9000
+        published: 8090
+        protocol: tcp
+        mode: host
+      - target: 9443
+        published: 8443
+        protocol: tcp
+        mode: host    
+    command: server
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING__ENABLED}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      # SMTP Host Emails are sent to
+      AUTHENTIK_EMAIL__HOST: ${AUTHENTIK_EMAIL__HOST}
+      AUTHENTIK_EMAIL__PORT: ${AUTHENTIK_EMAIL__HOST}
+      # Optionally authenticate (don't add quotation marks to your password)
+      AUTHENTIK_EMAIL__USERNAME: ${AUTHENTIK_EMAIL__HOST}
+      AUTHENTIK_EMAIL__PASSWORD: ${AUTHENTIK_EMAIL__HOST}
+      # Use StartTLS
+      AUTHENTIK_EMAIL__USE_TLS: ${AUTHENTIK_EMAIL__HOST}
+      # Use SSL
+      AUTHENTIK_EMAIL__USE_SSL: ${AUTHENTIK_EMAIL__HOST}
+      AUTHENTIK_EMAIL__TIMEOUT: ${AUTHENTIK_EMAIL__HOST}
+      # Email address authentik will send from, should have a correct @domain
+      AUTHENTIK_EMAIL__FROM: ${AUTHENTIK_EMAIL__HOST}
+    volumes:
+      - /home/devdojo/authentik/media:/media
+      - /home/devdojo/authentik/custom-templates:/templates
+    networks:
+      - shared_network
+  worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:2024.10.4
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: worker
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING__ENABLED}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      # SMTP Host Emails are sent to
+      AUTHENTIK_EMAIL__HOST: ${AUTHENTIK_EMAIL__HOST}
+      AUTHENTIK_EMAIL__PORT: ${AUTHENTIK_EMAIL__HOST}
+      # Optionally authenticate (don't add quotation marks to your password)
+      AUTHENTIK_EMAIL__USERNAME: ${AUTHENTIK_EMAIL__HOST}
+      AUTHENTIK_EMAIL__PASSWORD: ${AUTHENTIK_EMAIL__HOST}
+      # Use StartTLS
+      AUTHENTIK_EMAIL__USE_TLS: ${AUTHENTIK_EMAIL__HOST}
+      # Use SSL
+      AUTHENTIK_EMAIL__USE_SSL: ${AUTHENTIK_EMAIL__HOST}
+      AUTHENTIK_EMAIL__TIMEOUT: ${AUTHENTIK_EMAIL__HOST}
+      # Email address authentik will send from, should have a correct @domain
+      AUTHENTIK_EMAIL__FROM: ${AUTHENTIK_EMAIL__HOST}
+    # `user: root` and the docker socket volume are optional.
+    # See more for the docker socket integration here:
+    # https://goauthentik.io/docs/outposts/integrations/docker
+    # Removing `user: root` also prevents the worker from fixing the permissions
+    # on the mounted folders, so when removing this make sure the folders have the correct UID/GID
+    # (1000:1000 by default)
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/devdojo/authentik/media:/media
+      - /home/devdojo/authentik/certs:/certs
+      - /home/devdojo/authentik/custom-templates:/templates
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    external: true
