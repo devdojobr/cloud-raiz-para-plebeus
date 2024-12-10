@@ -1,0 +1,20 @@
+services:
+  uptime-kuma:
+    image: "louislam/uptime-kuma:1"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 3001
+        published: 3001
+        protocol: tcp
+        mode: host
+    volumes:
+      - /home/devdojo/uptime-kuma:/app/data
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    external: true
